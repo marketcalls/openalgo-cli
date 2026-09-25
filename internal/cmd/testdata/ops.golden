@@ -1,0 +1,381 @@
+BasketOrder: "Place a basket of orders"
+  orders (body, array, required) -> orders
+  strategy (body, string, required, default=openalgo-cli, cli-default) -> strategy
+  rows: results
+
+CancelAllOrder: "Cancel all open orders"
+  strategy (body, string, required, default=openalgo-cli, cli-default) -> strategy
+
+CancelGTTOrder: "Cancel an active GTT order"
+  strategy (body, string, required, default=openalgo-cli, cli-default) -> strategy
+  trigger-id (body, string, required) -> trigger_id
+
+CancelOrder: "Cancel an order"
+  orderid (body, string, required) -> orderid
+  strategy (body, string, required, default=openalgo-cli, cli-default) -> strategy
+
+ClosePosition: "Close all open positions"
+  strategy (body, string, required, default=openalgo-cli, cli-default) -> strategy
+
+GetAnalyzerStatus: "Get analyzer status"
+  rows: data
+
+GetChartPreferences: "Get chart preferences"
+
+GetDepth: "Get market depth for a symbol"
+  exchange (body, string, required) -> exchange
+  symbol (body, string, required) -> symbol
+  rows: data
+
+GetExpiry: "Get expiry dates"
+  exchange (body, string, required) -> exchange
+  instrumenttype (body, string, required) -> instrumenttype
+  symbol (body, string, required) -> symbol
+  rows: data
+
+GetFunds: "Get account funds"
+  rows: data
+
+GetGTTOrderbook: "List GTT triggers"
+  status (body, string, default=active) -> status
+  rows: data
+
+GetHistory: "Get historical candles"
+  end-date (body, string, required) -> end_date
+  exchange (body, string, required) -> exchange
+  interval (body, string, required) -> interval
+  start-date (body, string, required) -> start_date
+  symbol (body, string, required) -> symbol
+  source (body, string, default=api) -> source
+  rows: data
+
+GetHoldings: "Get portfolio holdings"
+  rows: data.holdings
+
+GetInstruments: "Download instruments"
+  exchange (query, string) -> exchange
+  format (query, string, default=json) -> format
+  rows: data
+
+GetIntervals: "Get supported history intervals"
+  rows: data
+
+GetMargin: "Calculate margin for a basket of positions"
+  positions (body, array, required) -> positions
+  rows: data
+
+GetMarketHolidays: "Get market holidays"
+  year (body, int) -> year
+  rows: data
+
+GetMarketTimings: "Get market timings for a date"
+  date (body, string, required) -> date
+  rows: data
+
+GetMultiOptionGreeks: "Calculate Greeks for multiple options"
+  symbols (body, array, required) -> symbols
+  expiry-time (body, string) -> expiry_time
+  interest-rate (body, number) -> interest_rate
+  rows: data
+
+GetMultiQuotes: "Get quotes for multiple symbols"
+  symbols (body, array, required) -> symbols
+  rows: results
+
+GetOpenPosition: "Get the open position for a symbol"
+  exchange (body, string, required) -> exchange
+  product (body, string, required) -> product
+  strategy (body, string, required, default=openalgo-cli, cli-default) -> strategy
+  symbol (body, string, required) -> symbol
+
+GetOptionChain: "Get option chain"
+  exchange (body, string, required) -> exchange
+  expiry-date (body, string, required) -> expiry_date
+  underlying (body, string, required) -> underlying
+  interest-rate (body, number) -> interest_rate
+  strike-count (body, int) -> strike_count
+  with-greeks (body, bool, default=false) -> with_greeks
+  rows: chain
+
+GetOptionGreeks: "Calculate option Greeks"
+  exchange (body, string, required) -> exchange
+  symbol (body, string, required) -> symbol
+  expiry-time (body, string) -> expiry_time
+  forward-price (body, number) -> forward_price
+  interest-rate (body, number) -> interest_rate
+  underlying-exchange (body, string) -> underlying_exchange
+  underlying-symbol (body, string) -> underlying_symbol
+
+GetOptionSymbol: "Resolve an option symbol"
+  exchange (body, string, required) -> exchange
+  offset (body, string, required) -> offset
+  option-type (body, string, required) -> option_type
+  underlying (body, string, required) -> underlying
+  expiry-date (body, string) -> expiry_date
+  strike-int (body, int) -> strike_int
+
+GetOrderStatus: "Get the status of an order"
+  orderid (body, string, required) -> orderid
+  strategy (body, string, required, default=openalgo-cli, cli-default) -> strategy
+  rows: data
+
+GetOrderbook: "Get the order book"
+  rows: data.orders
+
+GetPnlSymbols: "Get sandbox P&L by symbol"
+  rows: data
+
+GetPositionbook: "Get the position book"
+  rows: data
+
+GetQuotes: "Get a quote for a symbol"
+  exchange (body, string, required) -> exchange
+  symbol (body, string, required) -> symbol
+  rows: data
+
+GetSymbol: "Get symbol details"
+  exchange (body, string, required) -> exchange
+  symbol (body, string, required) -> symbol
+  rows: data
+
+GetSyntheticFuture: "Calculate synthetic future price"
+  exchange (body, string, required) -> exchange
+  expiry-date (body, string, required) -> expiry_date
+  underlying (body, string, required) -> underlying
+
+GetTicker: "Get ticker-compatible historical candles"
+  from (query, string, required) -> from
+  symbol (path, string, required) -> symbol
+  to (query, string, required) -> to
+  format (query, string, default=json) -> format
+  interval (query, string, default=D) -> interval
+  rows: data
+
+GetTradebook: "Get the trade book"
+  rows: data
+
+ModifyGTTOrder: "Modify an active GTT order"
+  action (body, string, required) -> action
+  exchange (body, string, required) -> exchange
+  price (body, number, required) -> price
+  product (body, string, required) -> product
+  quantity (body, number, required) -> quantity
+  strategy (body, string, required, default=openalgo-cli, cli-default) -> strategy
+  symbol (body, string, required) -> symbol
+  trigger-id (body, string, required) -> trigger_id
+  trigger-type (body, string, required) -> trigger_type
+  pricetype (body, string, default=LIMIT) -> pricetype
+  stoploss (body, number) -> stoploss
+  target (body, number) -> target
+  triggerprice-sl (body, number, default=0) -> triggerprice_sl
+  triggerprice-tg (body, number, default=0) -> triggerprice_tg
+
+ModifyOrder: "Modify an open order"
+  action (body, string, required) -> action
+  disclosed-quantity (body, int, required, default=0, cli-default) -> disclosed_quantity
+  exchange (body, string, required) -> exchange
+  orderid (body, string, required) -> orderid
+  price (body, number, required) -> price
+  pricetype (body, string, required) -> pricetype
+  product (body, string, required) -> product
+  quantity (body, number, required) -> quantity
+  strategy (body, string, required, default=openalgo-cli, cli-default) -> strategy
+  symbol (body, string, required) -> symbol
+  trigger-price (body, number, required, default=0, cli-default) -> trigger_price
+
+OptionsMultiOrder: "Place a multi-leg options order"
+  exchange (body, string, required) -> exchange
+  legs (body, array, required) -> legs
+  strategy (body, string, required, default=openalgo-cli, cli-default) -> strategy
+  underlying (body, string, required) -> underlying
+  expiry-date (body, string) -> expiry_date
+  strike-int (body, int) -> strike_int
+
+OptionsOrder: "Place an options order by strike offset"
+  action (body, string, required) -> action
+  exchange (body, string, required) -> exchange
+  offset (body, string, required) -> offset
+  option-type (body, string, required) -> option_type
+  quantity (body, int, required) -> quantity
+  strategy (body, string, required, default=openalgo-cli, cli-default) -> strategy
+  underlying (body, string, required) -> underlying
+  disclosed-quantity (body, int, default=0) -> disclosed_quantity
+  expiry-date (body, string) -> expiry_date
+  price (body, number, default=0) -> price
+  pricetype (body, string, default=MARKET) -> pricetype
+  product (body, string, default=MIS) -> product
+  splitsize (body, int, default=0) -> splitsize
+  strike-int (body, int) -> strike_int
+  trigger-price (body, number, default=0) -> trigger_price
+
+Ping: "Ping the API"
+  rows: data
+
+PlaceGTTOrder: "Place a GTT order"
+  action (body, string, required) -> action
+  exchange (body, string, required) -> exchange
+  price (body, number, required) -> price
+  product (body, string, required) -> product
+  quantity (body, number, required) -> quantity
+  strategy (body, string, required, default=openalgo-cli, cli-default) -> strategy
+  symbol (body, string, required) -> symbol
+  trigger-type (body, string, required) -> trigger_type
+  expires-at (body, string) -> expires_at
+  pricetype (body, string, default=LIMIT) -> pricetype
+  stoploss (body, number) -> stoploss
+  target (body, number) -> target
+  triggerprice-sl (body, number, default=0) -> triggerprice_sl
+  triggerprice-tg (body, number, default=0) -> triggerprice_tg
+
+PlaceOrder: "Place an order"
+  action (body, string, required) -> action
+  exchange (body, string, required) -> exchange
+  quantity (body, number, required) -> quantity
+  strategy (body, string, required, default=openalgo-cli, cli-default) -> strategy
+  symbol (body, string, required) -> symbol
+  disclosed-quantity (body, int, default=0) -> disclosed_quantity
+  price (body, number, default=0) -> price
+  pricetype (body, string, default=MARKET) -> pricetype
+  product (body, string, default=MIS) -> product
+  trigger-price (body, number, default=0) -> trigger_price
+
+PlaceSmartOrder: "Place a position-aware smart order"
+  action (body, string, required) -> action
+  exchange (body, string, required) -> exchange
+  position-size (body, number, required) -> position_size
+  quantity (body, number, required) -> quantity
+  strategy (body, string, required, default=openalgo-cli, cli-default) -> strategy
+  symbol (body, string, required) -> symbol
+  disclosed-quantity (body, int, default=0) -> disclosed_quantity
+  price (body, number, default=0) -> price
+  pricetype (body, string, default=MARKET) -> pricetype
+  product (body, string, default=MIS) -> product
+  trigger-price (body, number, default=0) -> trigger_price
+
+SearchSymbols: "Search symbols"
+  query (body, string, required) -> query
+  exchange (body, string) -> exchange
+  rows: data
+
+SplitOrder: "Split a large order into smaller orders"
+  action (body, string, required) -> action
+  exchange (body, string, required) -> exchange
+  quantity (body, number, required) -> quantity
+  splitsize (body, int, required) -> splitsize
+  strategy (body, string, required, default=openalgo-cli, cli-default) -> strategy
+  symbol (body, string, required) -> symbol
+  disclosed-quantity (body, int, default=0) -> disclosed_quantity
+  price (body, number, default=0) -> price
+  pricetype (body, string, default=MARKET) -> pricetype
+  product (body, string, default=MIS) -> product
+  trigger-price (body, number, default=0) -> trigger_price
+  rows: results
+
+StrategyCloseAll: "Close all legs of a strategy run"
+  strategy-id (body, int, required) -> strategy_id
+
+StrategyCloseLeg: "Close one leg of a strategy run"
+  leg-id (body, int, required) -> leg_id
+  strategy-id (body, int, required) -> strategy_id
+
+StrategyEvents: "List a strategy's risk events"
+  strategy-id (body, int, required) -> strategy_id
+  kind (body, string) -> kind
+  limit (body, int, default=500) -> limit
+  run-id (body, int) -> run_id
+  severity (body, string) -> severity
+  rows: data
+
+StrategyList: "List strategies"
+  query (body, string) -> q
+  status (body, string) -> status
+  rows: data
+
+StrategyOrders: "List a strategy's orders"
+  strategy-id (body, int, required) -> strategy_id
+  run-id (body, int) -> run_id
+  rows: data
+
+StrategyRuns: "List a strategy's runs"
+  strategy-id (body, int, required) -> strategy_id
+  limit (body, int, default=100) -> limit
+  rows: data
+
+StrategyStart: "Start a strategy run"
+  mode (body, string, required) -> mode
+  strategy-id (body, int, required) -> strategy_id
+
+StrategyStatus: "Get one strategy's configuration and current run"
+  strategy-id (body, int, required) -> strategy_id
+  rows: data.legs
+
+StrategyStop: "Stop a strategy run"
+  strategy-id (body, int, required) -> strategy_id
+
+TelegramBroadcast: "Broadcast a Telegram message"
+  message (body, string, required) -> message
+  filters (body, json, default={}) -> filters
+
+TelegramGetConfig: "Get Telegram bot configuration"
+  rows: data
+
+TelegramGetPreferences: "Get Telegram user preferences"
+  telegram-id (query, int, required) -> telegram_id
+  rows: data
+
+TelegramNotify: "Send a Telegram notification to one user"
+  message (body, string, required) -> message
+  username (body, string, required) -> username
+  priority (body, int, default=5) -> priority
+  wait-for-delivery (body, bool, default=false) -> wait_for_delivery
+
+TelegramSetConfig: "Update Telegram bot configuration"
+  broadcast-enabled (body, bool) -> broadcast_enabled
+  polling-mode (body, bool) -> polling_mode
+  rate-limit-per-minute (body, int) -> rate_limit_per_minute
+  token (body, string) -> token
+  webhook-url (body, string) -> webhook_url
+
+TelegramSetPreferences: "Update Telegram user preferences"
+  telegram-id (body, int, required) -> telegram_id
+  daily-summary (body, bool) -> daily_summary
+  language (body, string) -> language
+  order-notifications (body, bool) -> order_notifications
+  pnl-notifications (body, bool) -> pnl_notifications
+  summary-time (body, string) -> summary_time
+  timezone (body, string) -> timezone
+  trade-notifications (body, bool) -> trade_notifications
+
+TelegramStart: "Start the Telegram bot"
+
+TelegramStats: "Get Telegram bot usage statistics"
+  days (query, int, default=7) -> days
+  rows: data
+
+TelegramStop: "Stop the Telegram bot"
+
+TelegramUsers: "List linked Telegram users"
+  broker (query, string) -> broker
+  notifications-enabled (query, string) -> notifications_enabled
+  rows: data
+
+ToggleAnalyzer: "Toggle analyzer mode"
+  mode (body, bool, required) -> mode
+  rows: data
+
+UpdateChartPreferences: "Update chart preferences"
+  preferences (body, object, required) -> preferences
+
+WhatsAppNotify: "Send a WhatsApp message"
+  caption (body, string) -> caption
+  document-path (body, string) -> document_path
+  filename (body, string) -> filename
+  image-path (body, string) -> image_path
+  message (body, string) -> message
+  phone (body, string) -> phone
+  phones (body, array) -> phones
+  self (body, bool, default=false) -> self
+  username (body, string) -> username
+  wait-for-delivery (body, bool, default=true) -> wait_for_delivery
+  rows: data.failed
+

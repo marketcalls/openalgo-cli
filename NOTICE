@@ -1,0 +1,11 @@
+OpenAlgo CLI
+Copyright 2026 OpenAlgo
+
+This product includes software adapted from the Alpaca CLI
+(https://github.com/alpacahq/cli), Copyright 2026 Alpaca, licensed under
+the Apache License, Version 2.0.
+
+The command architecture, OpenAPI code generator, output pipeline (JSON,
+CSV, jq), flag helpers, help-all rendering, update check, and the build,
+CI, and release configuration were adapted from the Alpaca CLI and
+modified for the OpenAlgo API.

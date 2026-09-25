@@ -1,0 +1,58 @@
+version: 2
+
+project_name: openalgo-cli
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - main: ./cmd/openalgo
+    binary: openalgo
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+      - LICENSE*
+      - NOTICE*
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+brews:
+  - name: openalgo-cli
+    skip_upload: '{{ if not .Env.HOMEBREW_TAP_TOKEN }}true{{ else }}false{{ end }}'
+    repository:
+      owner: marketcalls
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    homepage: https://github.com/marketcalls/openalgo-cli
+    description: CLI for the OpenAlgo trading platform API
+    license: Apache-2.0
+    install: |
+      bin.install "openalgo"
+      generate_completions_from_executable(bin/"openalgo", "completion")
+    test: |
+      system bin/"openalgo", "version"

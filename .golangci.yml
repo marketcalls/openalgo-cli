@@ -1,0 +1,43 @@
+version: "2"
+linters:
+  enable:
+    - goconst
+    - misspell
+  settings:
+    goconst:
+      min-occurrences: 3
+    misspell:
+      locale: US
+      # "cancelled" is a literal OpenAlgo order status value.
+      ignore-rules:
+        - cancelled
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - errcheck
+          - goconst
+        path: _test\.go
+      - linters:
+          - goconst
+        path: cmd/generate/
+    paths:
+      - internal/api
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofumpt
+  exclusions:
+    generated: lax
+    paths:
+      - internal/api
+      - third_party$
+      - builtin$
+      - examples$

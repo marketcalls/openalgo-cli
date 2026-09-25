@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build
+        run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Spec check
+        run: make spec-check
+
+      - name: Generated code freshness
+        run: |
+          make generate
+          git diff --exit-code internal/api/ internal/cmd/commands.gen.go || {
+            echo "::error::Generated code is out of date. Run 'make generate' and commit the result."
+            exit 1
+          }
+
+      - name: Test
+        run: go test -race -count=1 -coverprofile=coverage.out ./...
+
+      - name: Coverage summary
+        run: go tool cover -func=coverage.out | tail -1
+
+      - name: Build binary
+        run: make build
+
+      - name: Verify binary runs
+        run: bin/openalgo version
+
+  # OpenAlgo is self-hosted, so CI usually has no server to talk to. The job
+  # skips (not fails) unless OPENALGO_TEST_API_KEY and OPENALGO_TEST_HOST
+  # point at a reachable OpenAlgo instance running in analyzer (sandbox) mode.
+  integration:
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      OPENALGO_TEST_API_KEY: ${{ secrets.OPENALGO_TEST_API_KEY }}
+      OPENALGO_TEST_HOST: ${{ secrets.OPENALGO_TEST_HOST }}
+    steps:
+      - uses: actions/checkout@v4
+        if: ${{ env.OPENALGO_TEST_API_KEY != '' }}
+
+      - uses: actions/setup-go@v5
+        if: ${{ env.OPENALGO_TEST_API_KEY != '' }}
+        with:
+          go-version-file: go.mod
+
+      - name: Integration tests
+        if: ${{ env.OPENALGO_TEST_API_KEY != '' }}
+        run: make test-integration
+
+      - name: Skip notice
+        if: ${{ env.OPENALGO_TEST_API_KEY == '' }}
+        run: echo "::notice::Integration tests skipped - set OPENALGO_TEST_API_KEY (and OPENALGO_TEST_HOST) repo secrets to run them against an OpenAlgo server in analyzer mode."
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - uses: golangci/golangci-lint-action@4afd733a84b1f43292c63897423277bb7f4313a9 # v8
+        with:
+          version: v2.11.4
