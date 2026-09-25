@@ -150,7 +150,7 @@ func loginWithAPIKey(cmd *cobra.Command) error {
 func validateCredentials(host, key string) (string, error) {
 	baseURL := config.BaseURL(host)
 	payload, _ := json.Marshal(map[string]string{"apikey": key})
-	req, _ := http.NewRequest("POST", baseURL+"/ping", bytes.NewReader(payload))
+	req, _ := http.NewRequest(http.MethodPost, baseURL+"/ping", bytes.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", useragent.Build(version))

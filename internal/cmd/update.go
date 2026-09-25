@@ -167,7 +167,7 @@ type ghRelease struct {
 
 func getLatestVersion(timeout time.Duration) (string, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", repoOwner, repoName)
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return "", err
 	}
@@ -205,7 +205,7 @@ var releasesLatestURL = fmt.Sprintf("https://github.com/%s/%s/releases/latest", 
 // latestFromRedirect reads the newest tag from the Location header of the
 // releases/latest redirect (".../releases/tag/v1.2.3").
 func latestFromRedirect(timeout time.Duration) (string, error) {
-	req, err := http.NewRequest("HEAD", releasesLatestURL, nil)
+	req, err := http.NewRequest(http.MethodHead, releasesLatestURL, nil)
 	if err != nil {
 		return "", err
 	}

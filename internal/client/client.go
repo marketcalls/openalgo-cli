@@ -140,11 +140,11 @@ func (c *Client) DoWrite(method, path string, params url.Values, body any) (json
 }
 
 func (c *Client) Get(path string, params url.Values) (json.RawMessage, error) {
-	return c.Do("GET", path, params, nil)
+	return c.Do(http.MethodGet, path, params, nil)
 }
 
 func (c *Client) Post(path string, body any) (json.RawMessage, error) {
-	return c.Do("POST", path, nil, body)
+	return c.Do(http.MethodPost, path, nil, body)
 }
 
 // RawRequest sends a request to a full URL. It is used by `openalgo api`,
@@ -196,7 +196,7 @@ func (c *Client) authenticate(method, reqURL string, params url.Values, body any
 	}
 
 	var payload []byte
-	if method == "GET" || method == "DELETE" {
+	if method == http.MethodGet || method == http.MethodDelete {
 		if c.APIKey != "" && q.Get("apikey") == "" && !strings.Contains(reqURL, "apikey=") {
 			q.Set("apikey", c.APIKey)
 		}

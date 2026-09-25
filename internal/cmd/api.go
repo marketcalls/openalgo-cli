@@ -105,7 +105,7 @@ With --csv and no --jq, the response's data field is rendered as rows.`,
 }
 
 var validMethods = map[string]bool{
-	"GET": true, "POST": true, "PUT": true, "PATCH": true, "DELETE": true,
+	http.MethodGet: true, http.MethodPost: true, http.MethodPut: true, http.MethodPatch: true, http.MethodDelete: true,
 }
 
 // parseMethodPath splits the positional arguments. Without an explicit
@@ -117,7 +117,7 @@ func parseMethodPath(args []string, queryOnly bool) (method, path string) {
 		}
 	}
 	if queryOnly {
-		return "GET", args[len(args)-1]
+		return http.MethodGet, args[len(args)-1]
 	}
 	return http.MethodPost, args[len(args)-1]
 }
@@ -232,7 +232,7 @@ func readBodyFlag(v string) ([]byte, error) {
 
 func methodSupportsBody(method string) bool {
 	switch method {
-	case "POST", "PUT", "PATCH":
+	case http.MethodPost, http.MethodPut, http.MethodPatch:
 		return true
 	default:
 		return false
