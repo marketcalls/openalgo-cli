@@ -4,8 +4,11 @@ name: Install smoke test
 # then installs the oldest release and runs `openalgo update --yes` to prove
 # an in-place upgrade works (on Windows this replaces a running .exe).
 on:
-  release:
-    types: [published]
+  # A release created by GoReleaser with GITHUB_TOKEN does not fire
+  # release events, so follow the Release workflow instead.
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
   push:
     branches: [main]
     paths:
@@ -22,6 +25,7 @@ env:
 
 jobs:
   unix:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     strategy:
       fail-fast: false
       matrix:
@@ -58,6 +62,7 @@ jobs:
           [ "$got" = "${latest#v}" ]
 
   windows:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     strategy:
       fail-fast: false
       matrix:
