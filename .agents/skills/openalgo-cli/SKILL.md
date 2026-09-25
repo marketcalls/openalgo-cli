@@ -3,7 +3,7 @@ name: openalgo-cli
 description: >
   Install, configure, and use the OpenAlgo CLI - a command-line tool for the
   OpenAlgo trading platform API (self-hosted, broker-agnostic, Indian
-  markets). Covers installation (Go, Homebrew), API key authentication,
+  markets). Covers installation (install script, Go), API key authentication,
   profile management, sandbox (analyzer) mode, and agent/automation
   integration. Use when the user asks to install the OpenAlgo CLI, set up
   OpenAlgo credentials, place or cancel orders on NSE/BSE/NFO/MCX from the
@@ -12,7 +12,7 @@ description: >
   into scripts, CI pipelines, or AI agent workflows. Keywords: openalgo,
   algo trading, NSE, BSE, NFO, F&O, options, Zerodha, broker, market data,
   analyzer mode, sandbox mode, command line, CLI tool, API key setup.
-compatibility: Requires a running OpenAlgo server and its API key. Go (go install) or Homebrew for installation. macOS, Linux, and Windows supported.
+compatibility: Requires a running OpenAlgo server and its API key. Install script (no Go needed) or Go 1.24+ (go install). macOS, Linux, and Windows supported.
 ---
 
 # OpenAlgo CLI
@@ -30,9 +30,12 @@ openalgo version
 If not installed:
 
 ```bash
+# macOS / Linux (prebuilt binary, no Go needed)
+curl -fsSL https://raw.githubusercontent.com/marketcalls/openalgo-cli/main/install.sh | sh
+# Windows PowerShell
+irm https://raw.githubusercontent.com/marketcalls/openalgo-cli/main/install.ps1 | iex
+# or with Go 1.24+
 go install github.com/marketcalls/openalgo-cli/cmd/openalgo@latest
-# or
-brew install marketcalls/tap/openalgo-cli
 ```
 
 ## Authentication

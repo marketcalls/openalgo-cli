@@ -30,11 +30,7 @@ curl -fsSL https://raw.githubusercontent.com/marketcalls/openalgo-cli/main/insta
 irm https://raw.githubusercontent.com/marketcalls/openalgo-cli/main/install.ps1 | iex
 ```
 
-**Homebrew (macOS/Linux):**
-
-```bash
-brew install marketcalls/tap/openalgo-cli
-```
+**Homebrew:** coming soon (`brew install marketcalls/tap/openalgo-cli` once the tap is published).
 
 **Go:**
 

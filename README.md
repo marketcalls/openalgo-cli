@@ -48,7 +48,7 @@ Check `openalgo analyzer status` before trading when you are not sure which mode
 
 - **A running OpenAlgo server** (default `http://127.0.0.1:5000`), logged in to your broker. See the [OpenAlgo installation guide](https://docs.openalgo.in).
 - **An OpenAlgo API key**, generated on the server's API Key page.
-- **Go is not required** for the one-line installers or Homebrew: they install a prebuilt single binary for macOS, Linux or Windows (amd64 and arm64). Go 1.24 or newer is needed only for `go install` or to build from source.
+- **Go is not required** for the one-line installers: they install a prebuilt single binary for macOS, Linux or Windows (amd64 and arm64). Go 1.24 or newer is needed only for `go install` or to build from source.
 
 ## Install
 
@@ -64,11 +64,7 @@ curl -fsSL https://raw.githubusercontent.com/marketcalls/openalgo-cli/main/insta
 irm https://raw.githubusercontent.com/marketcalls/openalgo-cli/main/install.ps1 | iex
 ```
 
-**Homebrew (macOS and Linux):**
-
-```bash
-brew install marketcalls/tap/openalgo-cli
-```
+**Homebrew:** coming soon (`brew install marketcalls/tap/openalgo-cli` once the tap is published).
 
 **Go (1.24+):**
 
