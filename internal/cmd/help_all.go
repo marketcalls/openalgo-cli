@@ -105,7 +105,7 @@ func printFlag(w io.Writer, f *pflag.Flag, indent string) {
 	}
 
 	def := ""
-	if f.DefValue != "" && f.DefValue != "false" && f.DefValue != "0" && f.DefValue != "[]" {
+	if f.DefValue != "" && f.DefValue != boolFalse && f.DefValue != "0" && f.DefValue != "[]" {
 		def = " (default: " + f.DefValue + ")"
 	}
 

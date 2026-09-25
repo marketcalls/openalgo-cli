@@ -19,6 +19,9 @@ import (
 
 const exitAPIError = 1
 
+// boolFalse is the string form of a false boolean flag or env value.
+const boolFalse = "false"
+
 var (
 	version        = "dev"
 	cfg            *config.Resolved
@@ -226,7 +229,7 @@ To update:    openalgo update`,
 // OPENALGO_QUIET=0 turns the setting off instead of on.
 func envBool(name string) bool {
 	switch strings.ToLower(strings.TrimSpace(os.Getenv(name))) {
-	case "", "0", "false", "no", "off":
+	case "", "0", boolFalse, "no", "off":
 		return false
 	}
 	return true
