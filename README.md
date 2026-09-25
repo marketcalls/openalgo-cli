@@ -2,6 +2,8 @@
 
 ![OpenAlgo CLI](docs/images/00-cover.png)
 
+Tutorial: [OpenAlgo CLI: Trade, Stream and Automate Your Broker from the Terminal](https://blog.openalgo.in/openalgo-cli-trade-stream-and-automate-your-broker-from-the-terminal-39b780228004) | Docs: [docs.openalgo.in](https://docs.openalgo.in)
+
 CLI for the [OpenAlgo](https://github.com/marketcalls/openalgo) trading platform API. Place and manage orders, read positions, funds and holdings, pull market data, work with option chains and Greeks, run strategies, and stream live quotes from the command line.
 
 OpenAlgo is a self-hosted, broker-agnostic algorithmic trading platform for Indian markets. One OpenAlgo server connects to your broker and exposes a single REST and WebSocket API with a common symbol format across NSE, BSE, NFO, BFO, CDS, BCD, MCX and more. This CLI talks to your own OpenAlgo server over HTTP. Server documentation lives at [docs.openalgo.in](https://docs.openalgo.in).
