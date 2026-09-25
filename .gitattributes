@@ -1,0 +1,5 @@
+# Keep LF everywhere, including Windows checkouts. The generated-code
+# freshness and golden-file tests compare bytes, and Go tooling writes LF.
+* text=auto eol=lf
+
+*.png binary
