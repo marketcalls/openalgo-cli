@@ -38,7 +38,18 @@ try {
     $dir = $env:OPENALGO_INSTALL_DIR
     if (-not $dir) { $dir = Join-Path $env:LOCALAPPDATA 'Programs\openalgo' }
     New-Item -ItemType Directory -Path $dir -Force | Out-Null
-    Copy-Item (Join-Path $tmp 'openalgo.exe') (Join-Path $dir 'openalgo.exe') -Force
+    $target = Join-Path $dir 'openalgo.exe'
+    $old = "$target.old"
+    # Windows locks a running executable against overwrite but allows a
+    # rename, so `openalgo update` (which runs this script from inside
+    # openalgo.exe) moves the running binary aside first. The leftover .old
+    # is removed on the next install, once nothing is running it.
+    Remove-Item $old -Force -ErrorAction SilentlyContinue
+    if (Test-Path $target) {
+        Move-Item $target $old -Force
+    }
+    Copy-Item (Join-Path $tmp 'openalgo.exe') $target -Force
+    Remove-Item $old -Force -ErrorAction SilentlyContinue
 
     $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
     if (($userPath -split ';') -notcontains $dir) {

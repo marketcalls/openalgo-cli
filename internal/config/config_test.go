@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -250,7 +251,9 @@ func TestSaveProfile_Permissions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if perm := info.Mode().Perm(); perm != 0o600 {
+	// Windows has no Unix permission bits; the file inherits the user
+	// profile's ACL instead.
+	if perm := info.Mode().Perm(); runtime.GOOS != "windows" && perm != 0o600 {
 		t.Errorf("profile permissions = %o, want 600", perm)
 	}
 }

@@ -169,6 +169,8 @@ openalgo data quotes --symbols '[{"symbol":"RELIANCE","exchange":"NSE"},{"symbol
 openalgo order basket --orders @basket.json
 ```
 
+On Windows, prefer a file (`--orders "@basket.json"`, quoted in PowerShell) or stdin (`--orders -`) over literal JSON: Windows PowerShell 5.1 strips inner double quotes and `cmd.exe` has no single quotes. PowerShell 7.3+ and Git Bash accept the literal form above. See "Windows shells" in the README.
+
 ### Symbols and constants
 
 - Equity `RELIANCE`; future `BANKNIFTY24APR24FUT`; option `NIFTY28MAR2420800CE`.

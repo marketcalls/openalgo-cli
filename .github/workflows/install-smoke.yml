@@ -1,0 +1,108 @@
+name: Install smoke test
+
+# Installs the published release with install.sh / install.ps1 on every OS,
+# then installs the oldest release and runs `openalgo update --yes` to prove
+# an in-place upgrade works (on Windows this replaces a running .exe).
+on:
+  release:
+    types: [published]
+  push:
+    branches: [main]
+    paths:
+      - install.sh
+      - install.ps1
+      - .github/workflows/install-smoke.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  OLDEST_RELEASE: v0.0.1
+
+jobs:
+  unix:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      OPENALGO_INSTALL_DIR: ${{ github.workspace }}/.oa-bin
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install latest release
+        run: sh install.sh
+
+      - name: Verify
+        run: |
+          set -e
+          latest=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName)
+          got=$("$OPENALGO_INSTALL_DIR/openalgo" version)
+          echo "installed $got, latest $latest"
+          [ "$got" = "${latest#v}" ]
+          "$OPENALGO_INSTALL_DIR/openalgo" --help-all > /dev/null
+          "$OPENALGO_INSTALL_DIR/openalgo" order place --symbol SBIN --exchange NSE --action BUY --quantity 1 --product CNC --dry-run
+
+      - name: Upgrade in place from the oldest release
+        run: |
+          set -e
+          OPENALGO_CLI_VERSION="$OLDEST_RELEASE" sh install.sh
+          "$OPENALGO_INSTALL_DIR/openalgo" update --check
+          "$OPENALGO_INSTALL_DIR/openalgo" update --yes
+          latest=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName)
+          got=$("$OPENALGO_INSTALL_DIR/openalgo" version)
+          echo "after update: $got (latest $latest)"
+          [ "$got" = "${latest#v}" ]
+
+  windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: [pwsh, powershell]
+    runs-on: windows-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install latest release
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:OPENALGO_INSTALL_DIR = "$env:RUNNER_TEMP\oa-bin"
+          ./install.ps1
+
+      - name: Verify
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $exe = "$env:RUNNER_TEMP\oa-bin\openalgo.exe"
+          $latest = (gh release view --repo $env:GITHUB_REPOSITORY --json tagName --jq .tagName).TrimStart('v')
+          $got = & $exe version
+          Write-Host "installed $got, latest $latest"
+          if ($got -ne $latest) { throw "version mismatch" }
+          & $exe --help-all | Out-Null
+          & $exe order place --symbol SBIN --exchange NSE --action BUY --quantity 1 --product CNC --dry-run
+          if ($LASTEXITCODE -ne 0) { throw "dry-run failed" }
+
+      - name: Upgrade in place from the oldest release
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:OPENALGO_INSTALL_DIR = "$env:RUNNER_TEMP\oa-bin"
+          $env:OPENALGO_CLI_VERSION = $env:OLDEST_RELEASE
+          ./install.ps1
+          Remove-Item Env:OPENALGO_CLI_VERSION
+          $exe = "$env:RUNNER_TEMP\oa-bin\openalgo.exe"
+          & $exe update --check
+          # The update runs install.ps1 from main while openalgo.exe is
+          # still running, the case Windows file locking used to break.
+          & $exe update --yes
+          if ($LASTEXITCODE -ne 0) { throw "update failed" }
+          $latest = (gh release view --repo $env:GITHUB_REPOSITORY --json tagName --jq .tagName).TrimStart('v')
+          $got = & $exe version
+          Write-Host "after update: $got (latest $latest)"
+          if ($got -ne $latest) { throw "update did not install $latest" }

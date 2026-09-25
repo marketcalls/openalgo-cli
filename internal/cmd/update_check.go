@@ -21,6 +21,9 @@ const (
 	installPs1URL = "https://raw.githubusercontent.com/" + repoOwner + "/" + repoName + "/main/install.ps1"
 )
 
+// goosWindows is runtime.GOOS on Windows.
+const goosWindows = "windows"
+
 func detectInstallMethod() string {
 	exe, err := os.Executable()
 	if err != nil {
@@ -36,11 +39,15 @@ func detectInstallMethod() string {
 // installMethodFor classifies a resolved binary path. Anything that is not
 // under Homebrew or a Go bin directory came from a release archive, so it
 // is upgraded by re-running the install script.
+//
+// Paths are compared with forward slashes so the same rules hold for
+// Windows paths (C:\Users\u\go\bin\openalgo.exe).
 func installMethodFor(resolved, gobin, gopath string) string {
+	resolved = filepath.ToSlash(resolved)
 	if strings.Contains(resolved, "/Cellar/") || strings.Contains(resolved, "/homebrew/") {
 		return installHomebrew
 	}
-	if gobin != "" && strings.HasPrefix(resolved, gobin) {
+	if gobin != "" && strings.HasPrefix(resolved, strings.TrimSuffix(filepath.ToSlash(gobin), "/")+"/") {
 		return installGoInstall
 	}
 	if gopath == "" {
@@ -48,7 +55,7 @@ func installMethodFor(resolved, gobin, gopath string) string {
 		gopath = filepath.Join(home, "go")
 	}
 	for _, p := range filepath.SplitList(gopath) {
-		if strings.HasPrefix(resolved, filepath.Join(p, "bin")) {
+		if strings.HasPrefix(resolved, strings.TrimSuffix(filepath.ToSlash(p), "/")+"/bin/") {
 			return installGoInstall
 		}
 	}
@@ -82,7 +89,7 @@ func installDir() string {
 // scriptUpgradeCommand re-runs the platform's install script with
 // OPENALGO_INSTALL_DIR pinned to dir.
 func scriptUpgradeCommand(goos, dir string) string {
-	if goos == "windows" {
+	if goos == goosWindows {
 		cmd := "irm " + installPs1URL + " | iex"
 		if dir != "" {
 			cmd = "$env:OPENALGO_INSTALL_DIR='" + strings.ReplaceAll(dir, "'", "''") + "'; " + cmd

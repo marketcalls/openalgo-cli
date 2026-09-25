@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -14,6 +15,16 @@ func TestInstallMethodFor(t *testing.T) {
 		{"/custom/bin/openalgo", "/custom/bin", "/home/u/go", installGoInstall},
 		{"/usr/local/bin/openalgo", "", "/home/u/go", installScript},
 		{"/home/u/.local/bin/openalgo", "", "/home/u/go", installScript},
+		{"/home/u/gobin/openalgo", "/home/u/go", "/home/u/go", installScript},
+	}
+	if runtime.GOOS == "windows" {
+		cases = append(cases, []struct {
+			path, gobin, gopath, want string
+		}{
+			{`C:\Users\u\go\bin\openalgo.exe`, "", `C:\Users\u\go`, installGoInstall},
+			{`D:\tools\bin\openalgo.exe`, `D:\tools\bin`, `C:\Users\u\go`, installGoInstall},
+			{`C:\Users\u\AppData\Local\Programs\openalgo\openalgo.exe`, "", `C:\Users\u\go`, installScript},
+		}...)
 	}
 	for _, c := range cases {
 		if got := installMethodFor(c.path, c.gobin, c.gopath); got != c.want {

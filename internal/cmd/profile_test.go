@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -114,7 +115,7 @@ func TestLogin_ValidatesAndSaves(t *testing.T) {
 		t.Errorf("output = %q, want broker name", out.String())
 	}
 	info, err := os.Stat(filepath.Join(dir, "profiles", "default.yaml"))
-	if err != nil || info.Mode().Perm() != 0o600 {
+	if err != nil || (runtime.GOOS != "windows" && info.Mode().Perm() != 0o600) {
 		t.Errorf("profile file mode = %v (%v), want 0600", info.Mode().Perm(), err)
 	}
 	if r, _ := config.Load("", ""); r.ProfileName != "default" || r.APIKey != "good-key" {

@@ -19,11 +19,14 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Build
-        run: go build ./...
-
-      - name: Vet
-        run: go vet ./...
+      - name: Vet (all release targets)
+        run: |
+          for os in linux darwin windows; do
+            for arch in amd64 arm64; do
+              echo "go vet $os/$arch"
+              GOOS=$os GOARCH=$arch go vet ./...
+            done
+          done
 
       - name: Spec check
         run: make spec-check
@@ -36,24 +39,41 @@ jobs:
             exit 1
           }
 
-      - name: Test
-        run: go test -race -count=1 -coverprofile=coverage.out ./...
+  # Unit tests on every OS the release ships for. The binary is pure Go, but
+  # paths, file permissions, shells and process handling differ per OS.
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Coverage summary
-        run: go tool cover -func=coverage.out | tail -1
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Test
+        run: go test -race -count=1 ./...
 
       - name: Build binary
-        run: make build
+        shell: bash
+        run: go build -o bin/openalgo$(go env GOEXE) ./cmd/openalgo
 
       - name: Verify binary runs
-        run: bin/openalgo version
+        shell: bash
+        run: |
+          bin/openalgo$(go env GOEXE) version
+          bin/openalgo$(go env GOEXE) --help-all > /dev/null
+          bin/openalgo$(go env GOEXE) order place --symbol SBIN --exchange NSE --action BUY --quantity 1 --product CNC --dry-run
 
   # OpenAlgo is self-hosted, so CI usually has no server to talk to. The job
   # skips (not fails) unless OPENALGO_TEST_API_KEY and OPENALGO_TEST_HOST
   # point at a reachable OpenAlgo instance running in analyzer (sandbox) mode.
   integration:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, test]
     env:
       OPENALGO_TEST_API_KEY: ${{ secrets.OPENALGO_TEST_API_KEY }}
       OPENALGO_TEST_HOST: ${{ secrets.OPENALGO_TEST_HOST }}
@@ -86,3 +106,68 @@ jobs:
       - uses: golangci/golangci-lint-action@4afd733a84b1f43292c63897423277bb7f4313a9 # v8
         with:
           version: v2.11.4
+
+  # Every quoting form the README documents for Windows shells, run in the
+  # real shell against a binary built from this commit. --dry-run needs no
+  # server, so each check is a pure round-trip of the argument parsing.
+  windows-shells:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build
+        shell: bash
+        run: |
+          go build -o bin/openalgo.exe ./cmd/openalgo
+          echo "$GITHUB_WORKSPACE/bin" >> "$GITHUB_PATH"
+
+      - name: PowerShell 7
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          function Check($out, $want) { if ($LASTEXITCODE -ne 0 -or "$out" -notmatch [regex]::Escape($want)) { throw "got: $out" } }
+          Check (openalgo data quote --schema) 'ltp'
+          Check (openalgo order basket --orders '[{"symbol":"SBIN","exchange":"NSE","action":"BUY","quantity":1,"product":"CNC"}]' --dry-run --jq '.orders[0].symbol') '"SBIN"'
+          Check (openalgo order basket --orders '[{"symbol":"SBIN","exchange":"NSE","action":"BUY","quantity":1,"product":"CNC"}]' --dry-run --jq '.orders[] | select(.action=="BUY") | .symbol') '"SBIN"'
+          Check ('[{"symbol":"INFY","exchange":"NSE","action":"BUY","quantity":1,"product":"CNC"}]' | openalgo order basket --orders - --dry-run --jq '.orders[0].symbol') '"INFY"'
+          Set-Content orders.json '[{"symbol":"TCS","exchange":"NSE","action":"BUY","quantity":1,"product":"CNC"}]'
+          Check (openalgo order basket --orders "@orders.json" --dry-run --jq '.orders[0].symbol') '"TCS"'
+
+      - name: Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          function Check($out, $want) { if ($LASTEXITCODE -ne 0 -or "$out" -notmatch [regex]::Escape($want)) { throw "got: $out" } }
+          Check (openalgo data quote --schema) 'ltp'
+          Check (openalgo order place --symbol SBIN --exchange NSE --action BUY --quantity 1 --product CNC --dry-run --jq '.symbol') '"SBIN"'
+          Check (openalgo order basket --orders '[{\"symbol\":\"SBIN\",\"exchange\":\"NSE\",\"action\":\"BUY\",\"quantity\":1,\"product\":\"CNC\"}]' --dry-run --jq '.orders[0].symbol') '"SBIN"'
+          Check (openalgo order basket --orders '[{\"symbol\":\"SBIN\",\"exchange\":\"NSE\",\"action\":\"BUY\",\"quantity\":1,\"product\":\"CNC\"}]' --dry-run --jq '.orders[] | select(.action==\"BUY\") | .symbol') '"SBIN"'
+          Check ('[{"symbol":"INFY","exchange":"NSE","action":"BUY","quantity":1,"product":"CNC"}]' | openalgo order basket --orders - --dry-run --jq '.orders[0].symbol') '"INFY"'
+          Set-Content orders.json '[{"symbol":"TCS","exchange":"NSE","action":"BUY","quantity":1,"product":"CNC"}]'
+          Check (openalgo order basket --orders "@orders.json" --dry-run --jq '.orders[0].symbol') '"TCS"'
+          # Out-File and > write UTF-16 LE in Windows PowerShell 5.1.
+          '[{"symbol":"WIPRO","exchange":"NSE","action":"BUY","quantity":1,"product":"CNC"}]' | Out-File orders16.json
+          Check (openalgo order basket --orders "@orders16.json" --dry-run --jq '.orders[0].symbol') '"WIPRO"'
+          '[{"symbol":"HDFCBANK","exchange":"NSE","action":"BUY","quantity":1,"product":"CNC"}]' | Set-Content -Encoding utf8 ordersbom.json
+          Check (openalgo order basket --orders "@ordersbom.json" --dry-run --jq '.orders[0].symbol') '"HDFCBANK"'
+
+      - name: Command Prompt
+        shell: cmd
+        run: |
+          openalgo order place --symbol SBIN --exchange NSE --action BUY --quantity 1 --product CNC --dry-run --jq ".symbol" | findstr /C:"SBIN" || exit /b 1
+          openalgo order basket --orders "[{\"symbol\":\"SBIN\",\"exchange\":\"NSE\",\"action\":\"BUY\",\"quantity\":1,\"product\":\"CNC\"}]" --dry-run --jq ".orders[0].symbol" | findstr /C:"SBIN" || exit /b 1
+          echo [{"symbol":"TCS","exchange":"NSE","action":"BUY","quantity":1,"product":"CNC"}]> orders.json
+          openalgo order basket --orders @orders.json --dry-run --jq ".orders[0].symbol" | findstr /C:"TCS" || exit /b 1
+
+      - name: Git Bash
+        shell: bash
+        run: |
+          set -e
+          out=$(openalgo order basket --orders '[{"symbol":"SBIN","exchange":"NSE","action":"BUY","quantity":1,"product":"CNC"}]' --dry-run --jq '.orders[0].symbol')
+          [ "$out" = '"SBIN"' ]
+          out=$(echo '[{"symbol":"INFY","exchange":"NSE","action":"BUY","quantity":1,"product":"CNC"}]' | openalgo order basket --orders - --dry-run --jq '.orders[0].symbol')
+          [ "$out" = '"INFY"' ]

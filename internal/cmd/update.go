@@ -118,7 +118,7 @@ to print structured JSON without prompting.`,
 func runUpgrade(upgradeCmd string) error {
 	fmt.Fprintln(os.Stderr, "Running:", upgradeCmd)
 	c := exec.Command("sh", "-c", upgradeCmd)
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == goosWindows {
 		c = exec.Command("powershell", "-NoProfile", "-Command", upgradeCmd)
 	}
 	c.Stdout = os.Stdout

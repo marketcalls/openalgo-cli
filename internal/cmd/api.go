@@ -139,7 +139,7 @@ func apiPath(p string) string {
 }
 
 func decodeJSONObject(raw []byte) (map[string]any, error) {
-	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec := json.NewDecoder(bytes.NewReader(cmdutil.NormalizeText(raw)))
 	dec.UseNumber()
 	var m map[string]any
 	if err := dec.Decode(&m); err != nil {

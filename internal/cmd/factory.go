@@ -298,7 +298,7 @@ func parseJSONFlag(cmd *cobra.Command, name string) (any, error) {
 		data = []byte(raw)
 	}
 
-	dec := json.NewDecoder(bytes.NewReader(data))
+	dec := json.NewDecoder(bytes.NewReader(cmdutil.NormalizeText(data)))
 	dec.UseNumber()
 	var v any
 	if err := dec.Decode(&v); err != nil {

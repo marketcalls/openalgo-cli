@@ -269,6 +269,42 @@ openalgo order basket --orders @basket.json
 cat legs.json | openalgo option multi-order --underlying NIFTY --exchange NSE_INDEX --expiry-date 27OCT26 --legs -
 ```
 
+### Windows shells
+
+The examples in this README use POSIX shell quoting, which works as-is in Git Bash and WSL. PowerShell and Command Prompt pass quotes differently. Every form below is exercised on each commit by the `windows-shells` CI job.
+
+The most portable option in any shell is a file or stdin, which needs no quote escaping:
+
+```powershell
+Set-Content orders.json '[{"symbol":"SBIN","exchange":"NSE","action":"BUY","quantity":1,"product":"CNC"}]'
+openalgo order basket --orders "@orders.json" --dry-run
+'[{"symbol":"SBIN","exchange":"NSE","action":"BUY","quantity":1,"product":"CNC"}]' | openalgo order basket --orders - --dry-run
+```
+
+In PowerShell, quote `"@orders.json"`: an unquoted `@name` is PowerShell's splatting syntax. Files written by Windows tools with a byte order mark (UTF-8 BOM, or UTF-16 from `Out-File` and `>` in Windows PowerShell 5.1) are read correctly.
+
+**PowerShell 7.3+** passes single-quoted strings through unchanged, so the POSIX examples work:
+
+```powershell
+openalgo data quote --symbol SBIN --exchange NSE --jq '.data.ltp'
+openalgo order basket --orders '[{"symbol":"SBIN","exchange":"NSE","action":"BUY","quantity":1,"product":"CNC"}]' --dry-run
+```
+
+**Windows PowerShell 5.1** (the built-in `powershell.exe`) strips double quotes inside arguments passed to programs. Escape each inner double quote with a backslash, or use a file or stdin:
+
+```powershell
+openalgo order basket --orders '[{\"symbol\":\"SBIN\",\"exchange\":\"NSE\",\"action\":\"BUY\",\"quantity\":1,\"product\":\"CNC\"}]' --dry-run
+openalgo order list --jq '.data.orders[] | select(.action==\"BUY\")'
+```
+
+**Command Prompt (`cmd.exe`)** has no single quotes. Wrap arguments in double quotes and escape inner double quotes with a backslash:
+
+```bat
+openalgo data quote --symbol SBIN --exchange NSE --jq ".data.ltp"
+openalgo order basket --orders "[{\"symbol\":\"SBIN\",\"exchange\":\"NSE\",\"action\":\"BUY\",\"quantity\":1,\"product\":\"CNC\"}]" --dry-run
+openalgo order basket --orders @orders.json --dry-run
+```
+
 ## Symbols and Order Constants
 
 OpenAlgo uses one symbol format across all brokers:
