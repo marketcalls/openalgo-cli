@@ -2,13 +2,23 @@
 
 All notable changes to the OpenAlgo CLI. The CLI is an alpha preview: commands, flags and output may still change between releases.
 
+## v0.0.3 - 2026-09-26
+
+Install and update reliability, found by the new release smoke test minutes after v0.0.2 shipped.
+
+### Fixed
+
+- **Install on shared or NAT'd networks.** `install.sh` and `install.ps1` looked up the latest release through the GitHub API, which allows 60 anonymous requests per hour per IP; on busy networks the install failed with "could not determine the latest release". They now read the `github.com/.../releases/latest` redirect and fall back to the API. `openalgo update --check` uses the same fallback when the API answers 403 or 429.
+- **`openalgo update` from PowerShell 7 on Windows.** The upgrade runs `install.ps1` in Windows PowerShell 5.1. Started from PowerShell 7, 5.1 inherits PowerShell 7's module path and cannot load script-module cmdlets, so the install stopped at "Get-FileHash is not recognized". The script now hashes and unzips with .NET directly, and the CLI clears `PSModulePath` for the child process. Because installs and updates always fetch the script from `main`, v0.0.1 and v0.0.2 binaries upgrade correctly too.
+- **Windows PowerShell 5.1 installs** enable TLS 1.2 explicitly (older defaults can exclude it) and hide the download progress bar, which made downloads several times slower.
+
 ## v0.0.2 - 2026-09-26
 
 Windows hardening. If you use the CLI on macOS or Linux nothing changes, but upgrading is still recommended.
 
 ### Fixed
 
-- **`openalgo update` on Windows.** The update replaced `openalgo.exe` while it was still running, which Windows refuses, so the upgrade failed with a "file in use" error. `install.ps1` now moves the running binary aside (`openalgo.exe.old`) before copying the new one, and removes the leftover on the next install. The fix lives in the install script on `main`, so updating from v0.0.1 also works.
+- **`openalgo update` on Windows.** The update copied the new `openalgo.exe` over the running one. Windows does not allow a running executable to be overwritten, so the copy step would fail. `install.ps1` now moves the running binary aside (`openalgo.exe.old`) before copying the new one, and removes the leftover on the next install. The fix lives in the install script on `main`, so updating from v0.0.1 also works.
 - **Install method detection on Windows.** A binary installed with `go install` (for example `C:\Users\you\go\bin\openalgo.exe`) was treated as a script install because paths were compared with forward slashes only. `openalgo update` now suggests `go install ...@latest` for those binaries, as it already did on macOS and Linux.
 - **JSON files written by Windows tools.** `--orders @file.json` (and every other JSON-valued flag, stdin with `-`, and `openalgo api --body`) now accepts files with a UTF-8 byte order mark or UTF-16 encoding, which Windows PowerShell 5.1 produces with `Out-File`, `>` and `Set-Content -Encoding utf8`. Before, these failed with "invalid JSON".
 

@@ -6,14 +6,34 @@
 #   OPENALGO_CLI_VERSION   release tag to install (default: latest), e.g. v0.0.1
 #   OPENALGO_INSTALL_DIR   install directory (default: %LOCALAPPDATA%\Programs\openalgo)
 $ErrorActionPreference = 'Stop'
+# The progress bar makes Invoke-WebRequest many times slower in Windows PowerShell 5.1.
+$ProgressPreference = 'SilentlyContinue'
 
 $repo = 'marketcalls/openalgo-cli'
 
 $arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'arm64' } else { 'amd64' }
 
+# Older Windows PowerShell defaults can exclude TLS 1.2, which GitHub requires.
+[Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+
+# Resolve the newest release from the github.com/.../releases/latest redirect,
+# which is not subject to the GitHub API's anonymous rate limit; the API is
+# the fallback.
+function Get-LatestTag {
+    try {
+        $req = [System.Net.WebRequest]::Create("https://github.com/$repo/releases/latest")
+        $req.AllowAutoRedirect = $false
+        $resp = $req.GetResponse()
+        $loc = $resp.Headers['Location']
+        $resp.Close()
+        if ($loc -match '/releases/tag/([^/]+)$') { return $Matches[1] }
+    } catch { }
+    return (Invoke-RestMethod "https://api.github.com/repos/$repo/releases/latest" -UseBasicParsing).tag_name
+}
+
 $version = $env:OPENALGO_CLI_VERSION
 if (-not $version) {
-    $version = (Invoke-RestMethod "https://api.github.com/repos/$repo/releases/latest").tag_name
+    $version = Get-LatestTag
 }
 $num = $version.TrimStart('v')
 
@@ -30,10 +50,17 @@ try {
     $line = Get-Content (Join-Path $tmp 'checksums.txt') | Where-Object { $_ -match " $([regex]::Escape($archive))$" }
     if (-not $line) { throw "no checksum for $archive" }
     $expected = ($line -split '\s+')[0]
-    $actual = (Get-FileHash (Join-Path $tmp $archive) -Algorithm SHA256).Hash.ToLower()
+    # .NET directly rather than Get-FileHash / Expand-Archive: those are
+    # script-module cmdlets that fail to load when Windows PowerShell is
+    # started from PowerShell 7 (which is how `openalgo update` can run).
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    $fs = [System.IO.File]::OpenRead((Join-Path $tmp $archive))
+    try { $actual = -join ($sha.ComputeHash($fs) | ForEach-Object { $_.ToString('x2') }) } finally { $fs.Close() }
     if ($expected -ne $actual) { throw "checksum mismatch for $archive" }
 
-    Expand-Archive (Join-Path $tmp $archive) -DestinationPath $tmp -Force
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $unzipped = Join-Path $tmp 'unzipped'
+    [System.IO.Compression.ZipFile]::ExtractToDirectory((Join-Path $tmp $archive), $unzipped)
 
     $dir = $env:OPENALGO_INSTALL_DIR
     if (-not $dir) { $dir = Join-Path $env:LOCALAPPDATA 'Programs\openalgo' }
@@ -48,7 +75,7 @@ try {
     if (Test-Path $target) {
         Move-Item $target $old -Force
     }
-    Copy-Item (Join-Path $tmp 'openalgo.exe') $target -Force
+    Copy-Item (Join-Path $unzipped 'openalgo.exe') $target -Force
     Remove-Item $old -Force -ErrorAction SilentlyContinue
 
     $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')

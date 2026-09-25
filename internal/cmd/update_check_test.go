@@ -1,9 +1,12 @@
 package cmd
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestInstallMethodFor(t *testing.T) {
@@ -46,5 +49,27 @@ func TestScriptUpgradeCommand(t *testing.T) {
 	}
 	if got := scriptUpgradeCommand("darwin", "/it's/bin"); !strings.Contains(got, `'/it'\''s/bin'`) {
 		t.Errorf("quoting = %q", got)
+	}
+}
+
+func TestLatestFromRedirect(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "https://github.com/marketcalls/openalgo-cli/releases/tag/v9.8.7", http.StatusFound)
+	}))
+	defer srv.Close()
+	orig := releasesLatestURL
+	releasesLatestURL = srv.URL
+	defer func() { releasesLatestURL = orig }()
+
+	got, err := latestFromRedirect(5 * time.Second)
+	if err != nil || got != "v9.8.7" {
+		t.Errorf("latestFromRedirect = %q, %v; want v9.8.7", got, err)
+	}
+}
+
+func TestWithoutEnv(t *testing.T) {
+	got := withoutEnv([]string{"PATH=/bin", "PSModulePath=x", "psmodulepath=y", "HOME=/h"}, "PSModulePath")
+	if strings.Join(got, ",") != "PATH=/bin,HOME=/h" {
+		t.Errorf("withoutEnv = %v", got)
 	}
 }

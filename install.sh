@@ -32,6 +32,28 @@ else
 	err "curl or wget is required"
 fi
 
+# latest_tag resolves the newest release from the github.com/.../releases/latest
+# redirect, which is not subject to the GitHub API's 60 requests/hour limit
+# for anonymous clients (shared or NAT'd IPs exhaust it quickly). The API is
+# the fallback.
+latest_tag() {
+	tag=""
+	if command -v curl >/dev/null 2>&1; then
+		url=$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$REPO/releases/latest" 2>/dev/null) || url=""
+	else
+		url=$(wget -q -O /dev/null --server-response "https://github.com/$REPO/releases/latest" 2>&1 |
+			awk '/^ *[Ll]ocation: /{loc=$2} END{print loc}')
+	fi
+	case "$url" in
+	*/releases/tag/*) tag="${url##*/}" ;;
+	esac
+	if [ -z "$tag" ]; then
+		tag=$(fetch "https://api.github.com/repos/$REPO/releases/latest" 2>/dev/null |
+			sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p' | head -n 1)
+	fi
+	printf '%s' "$tag" | tr -d '\r'
+}
+
 os=$(uname -s | tr '[:upper:]' '[:lower:]')
 case "$os" in
 darwin | linux) ;;
@@ -47,8 +69,7 @@ esac
 
 version="${OPENALGO_CLI_VERSION:-}"
 if [ -z "$version" ]; then
-	version=$(fetch "https://api.github.com/repos/$REPO/releases/latest" |
-		sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p' | head -n 1)
+	version=$(latest_tag)
 	[ -n "$version" ] || err "could not determine the latest release; set OPENALGO_CLI_VERSION"
 fi
 num="${version#v}"

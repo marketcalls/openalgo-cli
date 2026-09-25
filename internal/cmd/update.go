@@ -120,6 +120,11 @@ func runUpgrade(upgradeCmd string) error {
 	c := exec.Command("sh", "-c", upgradeCmd)
 	if runtime.GOOS == goosWindows {
 		c = exec.Command("powershell", "-NoProfile", "-Command", upgradeCmd)
+		// Started from PowerShell 7, Windows PowerShell inherits a
+		// PSModulePath that points at PowerShell 7's modules and cannot load
+		// its own script modules. Dropping the variable lets it rebuild its
+		// default.
+		c.Env = withoutEnv(os.Environ(), "PSModulePath")
 	}
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
@@ -176,6 +181,12 @@ func getLatestVersion(timeout time.Duration) (string, error) {
 	if resp.StatusCode == http.StatusNotFound {
 		return "", errNoRelease
 	}
+	if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusTooManyRequests {
+		// Anonymous API calls are limited to 60/hour per IP, which shared
+		// and NAT'd networks exhaust. The releases/latest page redirect is
+		// not rate limited the same way.
+		return latestFromRedirect(timeout)
+	}
 	if resp.StatusCode != 200 {
 		return "", fmt.Errorf("GitHub API returned %d", resp.StatusCode)
 	}
@@ -186,4 +197,47 @@ func getLatestVersion(timeout time.Duration) (string, error) {
 	}
 
 	return release.TagName, nil
+}
+
+// releasesLatestURL is the page GitHub redirects to the newest release tag.
+var releasesLatestURL = fmt.Sprintf("https://github.com/%s/%s/releases/latest", repoOwner, repoName)
+
+// latestFromRedirect reads the newest tag from the Location header of the
+// releases/latest redirect (".../releases/tag/v1.2.3").
+func latestFromRedirect(timeout time.Duration) (string, error) {
+	req, err := http.NewRequest("HEAD", releasesLatestURL, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("User-Agent", useragent.Build(version))
+	c := &http.Client{
+		Timeout:       timeout,
+		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
+	}
+	resp, err := c.Do(req)
+	if err != nil {
+		return "", err
+	}
+	_ = resp.Body.Close()
+	loc := resp.Header.Get("Location")
+	if i := strings.LastIndex(loc, "/releases/tag/"); i >= 0 {
+		return loc[i+len("/releases/tag/"):], nil
+	}
+	if resp.StatusCode == http.StatusNotFound || strings.HasSuffix(loc, "/releases") {
+		return "", errNoRelease
+	}
+	return "", fmt.Errorf("could not determine the latest release (HTTP %d)", resp.StatusCode)
+}
+
+// withoutEnv returns env without the named variable (case-insensitive, as
+// on Windows).
+func withoutEnv(env []string, name string) []string {
+	out := make([]string, 0, len(env))
+	for _, kv := range env {
+		if k, _, _ := strings.Cut(kv, "="); strings.EqualFold(k, name) {
+			continue
+		}
+		out = append(out, kv)
+	}
+	return out
 }
